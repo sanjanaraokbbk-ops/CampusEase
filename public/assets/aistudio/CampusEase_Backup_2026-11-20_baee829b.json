@@ -1,0 +1,301 @@
+{
+  "app": "DGU Venture Quest",
+  "exportVersion": "1.0",
+  "exportedAt": "2026-11-20T08:52:47.826Z",
+  "venture": {
+    "ventureName": "CampusEase",
+    "ventureIdea": "CampusEase is a student-focused convenience platform that helps college students access everyday essentials and services within or near campus. Students can order stationery, snacks, medicines, personal-care products and other urgent essentials through a mobile/web platform and receive them at convenient campus pickup points or hostels. The platform can partner with nearby retailers and campus vendors, creating a hyperlocal delivery ecosystem. What makes CampusEase different is its focus on student-specific needs, affordable pricing, quick delivery and convenient campus-based fulfillment.",
+    "currentMission": 11,
+    "unlockedMission": 12,
+    "completedMissions": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "completionPercentage": 92,
+    "assignment1Ready": false,
+    "assignment2Ready": true,
+    "createdAt": "2026-09-30T11:42:40.596Z",
+    "updatedAt": "2026-11-20T05:40:36.053Z",
+    "mission0": {
+      "ventureName": "CampusEase",
+      "ventureIdea": "CampusEase is a student-focused convenience platform that helps college students access everyday essentials and services within or near campus. Students can order stationery, snacks, medicines, personal-care products and other urgent essentials through a mobile/web platform and receive them at convenient campus pickup points or hostels. The platform can partner with nearby retailers and campus vendors, creating a hyperlocal delivery ecosystem. What makes CampusEase different is its focus on student-specific needs, affordable pricing, quick delivery and convenient campus-based fulfillment.",
+      "problemSolved": "CampusEase is a student-focused convenience platform that helps college students access everyday essentials and services within or near campus. Students can order stationery, snacks, medicines, personal-care products and other urgent essentials through a mobile/web platform and receive them at convenient campus pickup points or hostels. The platform can partner with nearby retailers and campus vendors, creating a hyperlocal delivery ecosystem. What makes CampusEase different is its focus on student-specific needs, affordable pricing, quick delivery and convenient campus-based fulfillment.",
+      "initialCustomer": "College and university students, particularly hostel students and students living away from home. The initial target segment would be students aged 18–25 who frequently need snacks, stationery, personal-care products, medicines and other daily essentials.",
+      "geography": "Doon University and nearby college/student clusters in Dehradun, Uttarakhand.",
+      "whyChosen": "I chose this idea because students frequently face convenience and accessibility problems in getting everyday essentials. My exposure to marketing and logistics helped me identify an opportunity to combine customer needs, local retail partnerships and efficient delivery into a student-focused solution."
+    },
+    "mission1": {
+      "frictions": [
+        {
+          "friction": "Students often need everyday essentials urgently but nearby stores may be inconvenient to reach, especially when they are busy with classes or staying in hostels.",
+          "evidenceSource": "Personal observation and informal discussions with college students about their everyday shopping difficulties.",
+          "evidenceStrength": "Strong",
+          "id": "f-1",
+          "currentWorkaround": "Students walk to nearby shops, ask friends to bring items, order from general delivery apps, or wait until they can visit a store.",
+          "whenOccurs": "During busy class schedules, late evenings, exam periods, and when students suddenly need essential items.",
+          "whyWorkaroundUnsatisfactory": "It can take time, involve extra delivery charges, depend on friends' availability, and may not provide quick access to campus-specific needs.",
+          "whoExperiences": "College and university students, especially hostel students and students living away from home."
+        }
+      ],
+      "primaryFrictionId": "f-1",
+      "confidenceEvidenceNeeded": "Surveying 50–100 students about their frequency of urgent purchases, time spent accessing nearby stores, delivery charges paid, and products they most frequently need."
+    },
+    "mission2": {
+      "functionalJob": "Quickly and conveniently get essential products whenever needed without leaving campus or hostel.",
+      "emotionalJob": "Feel stress-free and confident knowing that essential items are easily available when needed.",
+      "socialJob": "Be seen as a smart, independent and time-efficient student who manages daily needs conveniently.",
+      "primaryJTBD": {
+        "situation": "When I suddenly need an everyday essential while I am busy with classes or staying in my hostel,",
+        "motivationAction": "I want to quickly order the required item through a convenient campus delivery service,",
+        "desiredOutcome": "so that I can get my essential quickly without leaving campus or disrupting my schedule."
+      },
+      "addressedFriction": "Students often need everyday essentials urgently but nearby stores may be inconvenient to reach, especially when they are busy with classes or staying in hostels."
+    },
+    "mission3": {
+      "broadCustomerGroup": "College and university students in Dehradun",
+      "specificSegment": "Hostel students aged 18–25 who frequently need everyday essentials during busy academic schedules",
+      "demographicsRole": "Age 18–25, undergraduate and postgraduate students, especially hostel residents",
+      "geography": "Doon University and nearby college/student clusters in Dehradun",
+      "situationContext": "When students urgently need snacks, stationery, personal-care products or other essentials but are busy with classes or unable to leave campus/hostel",
+      "buyingBehaviour": "Frequent small-value purchases, usually driven by convenience and urgency; uses UPI and mobile-based ordering",
+      "willingnessToPay": "₹30–₹100 per order, with willingness to pay a small convenience/delivery fee for urgent needs",
+      "reachStrategy": "College WhatsApp groups, student communities, campus posters/QR codes, student representatives and Instagram",
+      "beachheadSegment": "DGU hostel students aged 18–25 who frequently need everyday essentials and have limited time to visit nearby stores."
+    },
+    "mission4": {
+      "customerPain": "Students struggle to get everyday essentials quickly when they are busy with classes or staying in hostels, making shopping inconvenient and time-consuming.",
+      "desiredGain": "Quick, convenient and affordable access to everyday essentials without leaving campus or disrupting their schedule.",
+      "productService": "A campus-focused ordering and delivery service that connects students with nearby stores and delivers everyday essentials to convenient campus or hostel pickup points.",
+      "mainBenefit": "Fast and convenient access to essential products with minimal effort, saving students time and reducing the need to leave campus.",
+      "reasonToBelieve": "Initial pilot with DGU students and nearby retailers will test order demand, delivery time, product availability and customer satisfaction before wider launch.",
+      "reasonHasEvidence": true,
+      "cvpStatement": "For DGU hostel students aged 18–25 who frequently need everyday essentials and have limited time to visit nearby stores., who struggles with Students struggle to get everyday essentials quickly when they are busy with classes or staying in hostels, making shopping inconvenient and time-consuming., our venture provides [product/service] that delivers [main benefit], so that [desired outcome].",
+      "whyChooseOverDoingNothing": "The time and inconvenience of visiting nearby stores make students more willing to use a quick campus delivery service when they urgently need everyday essentials."
+    },
+    "mission5": {
+      "alternatives": [
+        {
+          "mainStrength": "Wide product selection, convenient app-based ordering and fast delivery",
+          "type": "Direct Competitor",
+          "axisYScore": 7,
+          "mainWeakness": "May involve delivery or platform fees and is not specifically designed for university students",
+          "name": "blinkit",
+          "priceCost": "₹20–₹100+ per order depending on products, delivery and applicable fees",
+          "id": "alt-1",
+          "evidenceSource": "Blinkit website/app and observation of its delivery service",
+          "axisXScore": 8,
+          "mainOffer": "Fast delivery of groceries, snacks, personal-care products and everyday essentials .",
+          "evidenceStrength": "Moderate"
+        },
+        {
+          "mainStrength": "Immediate product availability and no delivery charge when students visit the store",
+          "type": "Substitute",
+          "axisXScore": 5,
+          "evidenceSource": "Personal observation of nearby convenience stores around the university",
+          "id": "alt-2",
+          "priceCost": "Product MRP or local store price; usually no separate delivery fee",
+          "mainWeakness": "Students must travel to the store, and product availability may vary",
+          "axisYScore": 3,
+          "name": "nearly local convience stores",
+          "mainOffer": "Immediate purchase of snacks, stationery, personal-care products and other everyday essentials",
+          "evidenceStrength": "Weak"
+        },
+        {
+          "axisYScore": 3,
+          "name": "swiggy instamart",
+          "evidenceStrength": "Strong",
+          "mainWeakness": "Designed for the general market rather than specifically for university students",
+          "evidenceSource": "Swiggy Instamart app/website and observation of its service",
+          "mainOffer": "On-demand delivery of groceries, snacks, personal-care products and everyday essentials",
+          "axisXScore": 8,
+          "type": "Direct Competitor",
+          "id": "alt-3",
+          "priceCost": "Product price + applicable delivery/platform charges",
+          "mainStrength": "Convenient app-based ordering with a broad range of everyday products"
+        }
+      ],
+      "axisXLabel": "Low Price ↔ High Price",
+      "axisYLabel": "Standardized ↔ Highly Customized",
+      "ventureAxisXScore": 3,
+      "ventureAxisYScore": 8,
+      "desiredAssociatedPosition": "CampusEase should be positioned as the convenient, affordable and student-focused campus delivery service that helps hostel students get everyday essentials quickly without leaving campus or disrupting their schedule."
+    },
+    "mission6": {
+      "targetCustomer": "DGU hostel students aged 18–25 who frequently need everyday essentials and have limited time to visit nearby stores.",
+      "category": "campus focused on-demand delivery of everyday essential",
+      "primaryBenefit": "Fast and convenient access to essential products with minimal effort, saving students time and reducing the need to leave campus.",
+      "mainAlternative": "blinkit",
+      "mainDifferentiation": "Student-focused campus delivery with convenient hostel access, affordable delivery, and products tailored to student needs.",
+      "reasonToBelieve": "Initial pilot with DGU students and nearby retailers will test order demand, delivery time, product availability and customer satisfaction before wider launch.",
+      "reasonHasEvidence": true,
+      "positioningStatement": "For DGU hostel students aged 18–25 who frequently need everyday essentials and have limited time to visit nearby stores., CampusEase is a campus focused on-demand delivery of everyday essential that provides Fast and convenient access to essential products with minimal effort, saving students time and reducing the need to leave campus., unlike blinkit, because Initial pilot with DGU students and nearby retailers will test order demand, delivery time, product availability and customer satisfaction before wider launch.."
+    },
+    "mission7": {
+      "revenueModel": "Per Transaction",
+      "otherRevenueModel": "",
+      "sellingPrice": 30,
+      "variableCost": 15,
+      "monthlyFixedCost": 8000,
+      "expectedCustomers": 300,
+      "purchasesPerCustomer": 2,
+      "priceEvidenceSource": "Initial willingness-to-pay assumption based on student convenience and delivery charges; validate through a pilot survey of 30–50 DGU hostel students.",
+      "costEvidenceSource": "Pilot estimate covering delivery incentives, packaging, basic technology/operations and campus coordination costs; validate through vendor and delivery-partner quotations",
+      "scenarios": {
+        "conservative": {
+          "notes": "Low initial adoption among DGU hostel students due to limited awareness and cautious student spending. Growth depends mainly on word-of-mouth and repeat users.",
+          "purchasesPerCustomer": 2,
+          "customers": 150,
+          "monthlyFixedCost": 0,
+          "sellingPrice": 0,
+          "variableCost": 0
+        },
+        "base": {
+          "notes": "Steady adoption through campus promotion, student referrals and partnerships with nearby retailers. Students use the service regularly for urgent everyday essentials.",
+          "monthlyFixedCost": 0,
+          "purchasesPerCustomer": 2,
+          "variableCost": 0,
+          "sellingPrice": 0,
+          "customers": 300
+        },
+        "ambitious": {
+          "sellingPrice": 0,
+          "variableCost": 0,
+          "purchasesPerCustomer": 2,
+          "notes": "High adoption supported by official campus promotion, multiple nearby retail partners, reliable delivery and strong repeat usage across DGU hostels.",
+          "monthlyFixedCost": 0,
+          "customers": 500
+        }
+      }
+    },
+    "mission8": {
+      "totalPotentialCustomers": 5000,
+      "totalCustomersEvidence": "Estimated total DGU student population representing the broad potential customer universe.",
+      "annualSpendPerCustomer": 720,
+      "annualSpendEvidence": "Based on ₹30 delivery/service fee × 2 purchases per month × 12 months.",
+      "serviceableCustomers": 1500,
+      "serviceableEvidence": "Estimated DGU hostel students aged 18–25 who regularly need everyday essentials and can be served through campus delivery.",
+      "obtainableCustomers": 300,
+      "obtainableEvidence": "12-month target based on a realistic initial capture of approximately 20% of the serviceable hostel-student segment through campus promotion, referrals and retailer partnerships.",
+      "mostUrgentAssumption": "We need to validate whether at least 25% of our target students are willing to use CampusEase and pay for the service, allowing us to realistically acquire up to 300 customers within the first year"
+    },
+    "mission9": {
+      "firstCustomerSegment": "DBS Global University students who regularly need quick and convenient access to campus services and student essentials.",
+      "coreMessage": "Campus life made easier. Get the services and essentials you need quickly, conveniently and all in one place with CampusEase",
+      "callToAction": "Scan the QR code and try CampusEase today for your next campus need",
+      "reachLocations": "Campus cafeteria, hostel areas, classrooms, student WhatsApp groups and Instagram.",
+      "channels": [
+        {
+          "expectedLeads": 150,
+          "channelName": "WhatsApp communities",
+          "budget": 500,
+          "whyFitsCustomer": "Students actively use WhatsApp groups for campus updates, recommendations and daily communication, making it a direct and low-cost way to reach our target users",
+          "id": "ch-1",
+          "evidenceReason": "Initial pilot assumption based on direct access to student WhatsApp groups and expected interest from the target student segment.",
+          "expectedCustomers": 30
+        }
+      ],
+      "experiment30Days": {
+        "week2": {
+          "learningQuestion": "Will students try CampusEase when they are reached through WhatsApp and Instagram?",
+          "action": "Launch CampusEase pilot with the first 30 student users",
+          "responsibility": "Founder / Marketing & Growth Lead",
+          "target": "30 students sign up and complete their first CampusEase transaction",
+          "metric": "30 students sign up and complete their first CampusEase transaction",
+          "channel": "WhatsApp communities & Instagram / social media"
+        },
+        "week3": {
+          "metric": "User satisfaction, repeat usage and willingness to pay",
+          "learningQuestion": "Do students find CampusEase useful enough to use again and pay for it?",
+          "target": "At least 20 of 30 pilot users provide feedback and 25% show willingness to pay",
+          "responsibility": "Founder / Customer Research Lead",
+          "channel": "WhatsApp follow-up & Google Forms",
+          "action": "Collect feedback from pilot users and test willingness to pay"
+        },
+        "week4": {
+          "target": "Identify the top 3 user problems and finalize improvements for the next pilot",
+          "metric": "User satisfaction, repeat usage and number of validated assumptions",
+          "learningQuestion": "Which CampusEase feature or service provides the most value to students and should be prioritized?",
+          "responsibility": "Founder / Marketing & Customer Research Lead",
+          "action": "Review pilot feedback and improve CampusEase based on user needs",
+          "channel": "WhatsApp feedback & Google Forms"
+        },
+        "week1": {
+          "learningQuestion": "Do students clearly understand the problem CampusEase solves and show interest in trying it?",
+          "responsibility": "Founder / Marketing & Growth Lead",
+          "action": "Conduct student interviews and prepare the CampusEase pilot",
+          "metric": "Number of interviews, sign-ups and signup conversion rate",
+          "channel": "WhatsApp communities & direct campus outreach",
+          "target": "25 student conversations and 15 pilot sign-ups"
+        }
+      }
+    },
+    "mission10": {
+      "coreAssumptionTested": "Will at least 30 students use CampusEase and complete a paid transaction during the first 30-day pilot?",
+      "features": [
+        {
+          "customerNeedAddressed": "Students need a quick and convenient way to access essential campus services without wasting time.",
+          "priority": "Must Have",
+          "evidenceReason": "It reduces the time and effort students spend finding and accessing campus services.",
+          "name": "Easy Campus Service Booking",
+          "whyNeeded": "It reduces the time and effort students spend finding and accessing campus services.",
+          "id": "feat-1"
+        }
+      ],
+      "excludedFeatures": "Native mobile app, advanced personalization, live tracking, automated refunds, loyalty rewards, and complex payment features.",
+      "mvpPurpose": "Validate whether students will use and pay for a simple, convenient platform to access essential campus services.",
+      "mvpCoreUser": "DGU hostel students aged 18–25 who frequently need everyday essentials and have limited time to visit nearby stores.",
+      "mvpCoreProblem": "Students often need everyday essentials urgently but nearby stores may be inconvenient to reach, especially when they are busy with classes or staying in hostels.",
+      "successMetric": "30 paying students complete their first transaction within the 30-day pilot, with at least 25% showing willingness to use the service again."
+    },
+    "mission11": {
+      "topAssumptions": [
+        {
+          "whyItMatters": "If students are interested but unwilling to pay, the revenue model will not be sustainable.",
+          "howToTest": "Offer the MVP to 30 students and track how many complete a paid transaction.",
+          "assumption": "At least 30 students will be willing to pay for CampusEase during the first 30-day pilot.",
+          "evidenceNeeded": "Verified payment records and completed CampusEase transactions from pilot users.",
+          "id": "assump-1"
+        },
+        {
+          "assumption": "WhatsApp communities and Instagram can consistently reach students who are interested in CampusEase.",
+          "id": "assump-2",
+          "howToTest": "Run a 30-day pilot campaign through WhatsApp and Instagram and track leads, sign-ups and paying customers.",
+          "whyItMatters": "If these channels cannot generate enough interested users at a reasonable cost, customer acquisition will be difficult.",
+          "evidenceNeeded": "Run a 30-day pilot campaign through WhatsApp and Instagram and track leads, sign-ups and paying customers."
+        },
+        {
+          "howToTest": "Track 30 pilot users for 30 days and measure how many complete a second transaction.",
+          "id": "assump-3",
+          "whyItMatters": "Repeat usage is important for customer retention and for reaching the planned 300-customer obtainable market.",
+          "assumption": "Students will continue using CampusEase after their first transaction if the service saves them time and effort.",
+          "evidenceNeeded": "Transaction records showing repeat purchases, along with user feedback on why they returned or did not return."
+        }
+      ]
+    },
+    "mission12": {
+      "reflectionNotes": "CampusEase aims to solve a common student problem by making access to campus services more convenient and time-saving. Through this venture plan, I identified the importance of validating willingness to pay, repeat usage and customer acquisition. The next step is to test the MVP with real students, collect feedback and improve the solution based on actual user behaviour.",
+      "finalizedAt": "2026-11-20T08:52:04.899Z",
+      "finalReviewCompleted": true
+    },
+    "assignment2": {
+      "appUrl": "https://campusease.vercel.app.",
+      "submittedAt": "2026-09-30T13:46:41.409Z",
+      "lastUpdatedAt": "2026-11-20T05:20:22.456Z"
+    },
+    "updatedAtServer": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1795153236,
+      "nanoseconds": 872000000
+    }
+  }
+}

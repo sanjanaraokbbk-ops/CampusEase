@@ -1,0 +1,6 @@
+{
+  "name": "CampusEase",
+  "description": "Student-focused campus convenience platform for DBS Global University — order everyday essentials and book campus services with hostel or pickup-point fulfillment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

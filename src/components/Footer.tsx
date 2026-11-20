@@ -23,7 +23,7 @@ export function Footer({ onNavigate }: FooterProps) {
               for DBS Global University students in Dehradun.
             </p>
             <p className="text-xs text-[#9E8EC4] pt-1">
-              Academic Pilot MVP · Demonstration platform using browser local storage.
+              Academic Pilot MVP · Powered by Firebase Authentication &amp; Cloud Firestore.
             </p>
           </div>
 

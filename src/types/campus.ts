@@ -63,6 +63,7 @@ export interface OrderLineItem {
 
 export interface Order {
   id: string;
+  userId?: string;
   createdAt: string;
   studentName: string;
   mobile: string;
@@ -92,6 +93,7 @@ export interface CampusService {
 
 export interface ServiceBooking {
   id: string;
+  userId?: string;
   createdAt: string;
   serviceId: string;
   serviceName: string;

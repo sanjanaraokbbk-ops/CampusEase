@@ -1,40 +1,59 @@
 import { useMemo, useState } from 'react';
-import { Info, RotateCcw } from 'lucide-react';
+import { CloudUpload, Info, Lock, LogOut } from 'lucide-react';
+import { User } from 'firebase/auth';
 import {
   BookingStatus,
   FulfillmentMethod,
   Order,
   OrderStatus,
+  PageView,
   Product,
   ProductCategory,
   ServiceBooking,
 } from '../types/campus';
+import { GoogleAuthCard } from './GoogleAuthCard';
 import { ProductImage } from './ProductImage';
 
 interface AdminDashboardViewProps {
+  user: User | null;
+  authReady: boolean;
+  authBusy: boolean;
+  authError: string | null;
+  isAdmin: boolean;
+  onSignIn: () => void;
+  onSignOut: () => void;
+  onNavigate: (view: PageView) => void;
   products: Product[];
   orders: Order[];
   bookings: ServiceBooking[];
-  onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
-  onUpdateBookingStatus: (bookingId: string, status: BookingStatus) => void;
-  onToggleProductAvailability: (productId: string) => void;
-  onResetDemoData: () => void;
+  onUpdateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+  onUpdateBookingStatus: (bookingId: string, status: BookingStatus) => Promise<void>;
+  onToggleProductAvailability: (productId: string) => Promise<void>;
+  onSyncCatalogToFirestore: () => Promise<void>;
 }
 
 type AdminTab = 'orders' | 'bookings' | 'inventory';
 
 export function AdminDashboardView({
+  user,
+  authReady,
+  authBusy,
+  authError,
+  isAdmin,
+  onSignIn,
+  onSignOut,
+  onNavigate,
   products,
   orders,
   bookings,
   onUpdateOrderStatus,
   onUpdateBookingStatus,
   onToggleProductAvailability,
-  onResetDemoData,
+  onSyncCatalogToFirestore,
 }: AdminDashboardViewProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('orders');
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'All'>('All');
-  const [confirmingReset, setConfirmingReset] = useState(false);
+  const [syncingCatalog, setSyncingCatalog] = useState(false);
 
   const availableProductsCount = useMemo(
     () => products.filter((p) => p.available).length,
@@ -51,81 +70,133 @@ export function AdminDashboardView({
     return products.filter((p) => p.category === categoryFilter);
   }, [products, categoryFilter]);
 
+  if (!authReady) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center text-sm text-[#6B5E84]">
+        Verifying Firebase credentials...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <GoogleAuthCard
+          title="CampusEase Admin Sign-In"
+          description="Sign in with a verified CampusEase administrator Google account to manage Firestore orders, campus service bookings, and live product inventory."
+          buttonLabel="Sign in with Google"
+          loading={authBusy}
+          error={authError}
+          onSignIn={onSignIn}
+        />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <div className="rounded-2xl bg-white border border-[#E4DCF4] p-8 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-[#F7F5FC] text-[#3B1D6E] mx-auto flex items-center justify-center mb-4">
+            <Lock className="w-5 h-5" />
+          </div>
+          <h1 className="font-display text-xl font-bold text-[#2A1254]">
+            Administrator Access Required
+          </h1>
+          <p className="text-sm text-[#52476A] mt-2 leading-relaxed">
+            You are signed in as <strong>{user.email}</strong>. Firestore security rules restrict
+            order management and inventory updates to verified CampusEase administrators.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigate('student')}
+              className="px-5 py-2.5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] text-white text-sm font-semibold cursor-pointer"
+            >
+              Go to Student Hub
+            </button>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="px-4 py-2.5 rounded-xl border border-[#DDD4F2] bg-white hover:bg-[#FAF8FE] text-sm font-medium text-[#52476A] inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Switch Account</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
       <div className="pb-6 border-b border-[#E8E2F4] flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold text-[#0369A1]">
-            Demonstration Operations Console · Local Browser State
+            Verified Firebase Admin · {user.email}
           </p>
           <h1 className="font-display text-3xl font-extrabold text-[#2A1254] tracking-tight mt-1">
             CampusEase Admin Dashboard
           </h1>
           <p className="text-sm text-[#52476A] mt-1.5">
-            Manage demonstration order statuses, review service bookings, and toggle catalog product
+            Manage live Cloud Firestore orders, campus service bookings, and catalog stock
             availability in real time.
           </p>
         </div>
 
-        {/* Inline Reset Confirmation */}
-        <div className="shrink-0">
-          {confirmingReset ? (
-            <div className="inline-flex items-center gap-2 p-2 rounded-xl bg-rose-50 border border-rose-200">
-              <span className="text-xs font-medium text-rose-800 px-1">Restore starter data?</span>
-              <button
-                type="button"
-                onClick={() => {
-                  onResetDemoData();
-                  setConfirmingReset(false);
-                }}
-                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer"
-              >
-                Confirm Reset
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingReset(false)}
-                className="px-2.5 py-1.5 rounded-lg bg-white text-[#52476A] text-xs font-medium border border-rose-200 cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmingReset(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#DDD4F2] bg-white hover:bg-[#FAF8FE] text-xs font-semibold text-[#2A1254] transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-[#3B1D6E]" />
-              <span>Reset Demo Data</span>
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            disabled={syncingCatalog}
+            onClick={async () => {
+              setSyncingCatalog(true);
+              try {
+                await onSyncCatalogToFirestore();
+              } finally {
+                setSyncingCatalog(false);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#DDD4F2] bg-white hover:bg-[#FAF8FE] disabled:opacity-60 text-xs font-semibold text-[#2A1254] transition-colors cursor-pointer"
+          >
+            <CloudUpload className="w-3.5 h-3.5 text-[#3B1D6E]" />
+            <span>{syncingCatalog ? 'Syncing Catalog...' : 'Sync All 20 Products to Firestore'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#DDD4F2] bg-white hover:bg-rose-50 hover:text-rose-700 text-xs font-semibold text-[#52476A] transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
 
-      {/* Explicit Demo Data Disclosure */}
+      {/* Explicit Pilot Disclosure */}
       <div className="rounded-xl bg-[#EEF8FF] border border-[#CBE7FA] px-4 py-3 flex items-start gap-2.5 text-xs sm:text-sm text-[#0C4A6E]">
         <Info className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
         <span>
-          <strong>Demonstration Data Only:</strong> All statistics, orders, and service bookings
-          shown here are locally stored sample/test records in your browser and do not represent
-          actual university revenue or live delivery operations.
+          <strong>Pilot MVP Database:</strong> Orders, bookings, and product availability are
+          persisted in your Firebase Firestore database. Status changes remain simulated for pilot
+          testing and do not dispatch a real payment or courier network.
         </span>
       </div>
 
       {/* Summary KPI Strip */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl bg-white border border-[#E8E2F4] p-5">
-          <p className="text-xs text-[#6B5E84]">Total Demo Orders</p>
+          <p className="text-xs text-[#6B5E84]">Total Firestore Orders</p>
           <p className="font-display text-2xl sm:text-3xl font-extrabold text-[#2A1254] mt-1 tabular-nums">
             {orders.length}
           </p>
-          <p className="text-xs text-[#655A7C] mt-1">Stored locally in browser</p>
+          <p className="text-xs text-[#655A7C] mt-1">Synced live across sessions</p>
         </div>
 
         <div className="rounded-2xl bg-white border border-[#E8E2F4] p-5">
-          <p className="text-xs text-[#6B5E84]">Total Demo Bookings</p>
+          <p className="text-xs text-[#6B5E84]">Total Service Bookings</p>
           <p className="font-display text-2xl sm:text-3xl font-extrabold text-[#2A1254] mt-1 tabular-nums">
             {bookings.length}
           </p>
@@ -138,7 +209,7 @@ export function AdminDashboardView({
             {availableProductsCount}{' '}
             <span className="text-base font-medium text-[#7A6F93]">/ {products.length}</span>
           </p>
-          <p className="text-xs text-[#655A7C] mt-1">Live sync with catalog</p>
+          <p className="text-xs text-[#655A7C] mt-1">Live sync with storefront</p>
         </div>
 
         <div className="rounded-2xl bg-white border border-[#E8E2F4] p-5">
@@ -192,16 +263,17 @@ export function AdminDashboardView({
         <section className="rounded-2xl bg-white border border-[#E8E2F4] overflow-hidden">
           <div className="px-6 py-4 border-b border-[#EFEAF9]">
             <h2 className="font-display text-base font-bold text-[#2A1254]">
-              Recent Demonstration Orders
+              Cloud Firestore Orders
             </h2>
             <p className="text-xs text-[#6B5E84] mt-0.5">
-              Changing an order status immediately updates the Student Hub tracking view.
+              Updating an order status writes to Firestore and updates the Student Hub live.
             </p>
           </div>
 
           {orders.length === 0 ? (
             <div className="p-10 text-center text-sm text-[#6B5E84]">
-              No demonstration orders recorded yet.
+              No orders stored in Firestore yet. Place a demo order from Essentials to test live
+              sync.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -253,7 +325,7 @@ export function AdminDashboardView({
                           id={`status-${order.id}`}
                           value={order.status}
                           onChange={(e) =>
-                            onUpdateOrderStatus(order.id, e.target.value as OrderStatus)
+                            void onUpdateOrderStatus(order.id, e.target.value as OrderStatus)
                           }
                           className="px-3 py-1.5 rounded-lg border border-[#D4C7EC] bg-white text-xs font-semibold text-[#2A1254] focus:outline-none focus:ring-2 focus:ring-[#3B1D6E] cursor-pointer"
                         >
@@ -281,13 +353,13 @@ export function AdminDashboardView({
               Campus Service Booking Requests
             </h2>
             <p className="text-xs text-[#6B5E84] mt-0.5">
-              Update demonstration service statuses across the pilot workflow.
+              Live Firestore service requests scheduled by students.
             </p>
           </div>
 
           {bookings.length === 0 ? (
             <div className="p-10 text-center text-sm text-[#6B5E84]">
-              No demonstration service bookings yet.
+              No campus service bookings recorded in Firestore yet.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -329,7 +401,7 @@ export function AdminDashboardView({
                           id={`bstatus-${booking.id}`}
                           value={booking.status}
                           onChange={(e) =>
-                            onUpdateBookingStatus(booking.id, e.target.value as BookingStatus)
+                            void onUpdateBookingStatus(booking.id, e.target.value as BookingStatus)
                           }
                           className="px-3 py-1.5 rounded-lg border border-[#D4C7EC] bg-white text-xs font-semibold text-[#2A1254] focus:outline-none focus:ring-2 focus:ring-[#3B1D6E] cursor-pointer"
                         >
@@ -358,7 +430,7 @@ export function AdminDashboardView({
                 Product Availability Management
               </h2>
               <p className="text-xs text-[#6B5E84] mt-0.5">
-                Toggle any product between In Stock and Out of Stock to test live catalog updates.
+                Toggles persist directly in Cloud Firestore and update the Essentials catalog live.
               </p>
             </div>
 
@@ -417,7 +489,7 @@ export function AdminDashboardView({
                     role="switch"
                     aria-checked={product.available}
                     aria-label={`Toggle availability for ${product.name}`}
-                    onClick={() => onToggleProductAvailability(product.id)}
+                    onClick={() => void onToggleProductAvailability(product.id)}
                     className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B1D6E] ${
                       product.available ? 'bg-[#3B1D6E]' : 'bg-[#D5CEE3]'
                     }`}

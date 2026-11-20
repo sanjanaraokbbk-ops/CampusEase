@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   Calendar,
@@ -8,6 +8,7 @@ import {
   Info,
   MapPin,
 } from 'lucide-react';
+import { User } from 'firebase/auth';
 import {
   ALL_CAMPUS_LOCATIONS,
   CAMPUS_SERVICES,
@@ -20,10 +21,15 @@ import {
   ServiceBooking,
   StudentProfile,
 } from '../types/campus';
+import { GoogleAuthCard } from './GoogleAuthCard';
 
 interface ServicesViewProps {
+  user: User | null;
+  authBusy: boolean;
+  authError: string | null;
+  onSignIn: () => void;
   profile: StudentProfile;
-  onCreateBooking: (input: CreateBookingInput) => ServiceBooking;
+  onCreateBooking: (input: CreateBookingInput) => Promise<ServiceBooking | null>;
   onNavigate: (view: PageView) => void;
 }
 
@@ -36,6 +42,10 @@ function getTodayIsoDate(): string {
 }
 
 export function ServicesView({
+  user,
+  authBusy,
+  authError,
+  onSignIn,
   profile,
   onCreateBooking,
   onNavigate,
@@ -55,7 +65,18 @@ export function ServicesView({
   );
   const [notes, setNotes] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<ServiceBooking | null>(null);
+
+  useEffect(() => {
+    setStudentName(profile.name);
+    setMobile(profile.mobile);
+    setEmail(profile.email);
+    if (ALL_CAMPUS_LOCATIONS.includes(profile.defaultLocation)) {
+      setLocation(profile.defaultLocation);
+    }
+  }, [profile]);
 
   const selectedService: CampusService =
     CAMPUS_SERVICES.find((s) => s.id === selectedServiceId) ?? CAMPUS_SERVICES[0];
@@ -93,27 +114,37 @@ export function ServicesView({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!user || !validate()) return;
 
-    const booking = onCreateBooking({
-      serviceId: selectedService.id,
-      serviceName: selectedService.name,
-      servicePrice: selectedService.price,
-      servicePriceUnit: selectedService.priceUnit,
-      preferredDate,
-      preferredTime,
-      studentName,
-      mobile: mobile.replace(/\D/g, ''),
-      email,
-      location,
-      notes,
-    });
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const booking = await onCreateBooking({
+        serviceId: selectedService.id,
+        serviceName: selectedService.name,
+        servicePrice: selectedService.price,
+        servicePriceUnit: selectedService.priceUnit,
+        preferredDate,
+        preferredTime,
+        studentName,
+        mobile: mobile.replace(/\D/g, ''),
+        email,
+        location,
+        notes,
+      });
 
-    setConfirmedBooking(booking);
-    setNotes('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (booking) {
+        setConfirmedBooking(booking);
+        setNotes('');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Unable to save booking right now.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -135,8 +166,8 @@ export function ServicesView({
           <Info className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
           <span>
             <strong>Demonstration Services Notice:</strong> All service listings below are sample
-            pilot services built to test CampusEase booking workflows. Bookings are stored locally
-            in your browser with no real charges.
+            pilot services built to test CampusEase booking workflows. Confirmed bookings are saved
+            to Cloud Firestore with no real charges.
           </span>
         </div>
       </div>
@@ -160,8 +191,8 @@ export function ServicesView({
                   {confirmedBooking.serviceName}
                 </h2>
                 <p className="text-sm text-[#52476A] mt-1">
-                  Your demonstration booking request has been saved locally. Show your booking
-                  reference at handoff.
+                  Your demonstration booking request has been saved in Cloud Firestore. Show your
+                  booking reference at handoff.
                 </p>
               </div>
             </div>
@@ -341,6 +372,19 @@ export function ServicesView({
               </div>
             </div>
 
+            {!user ? (
+              <div className="mt-5">
+                <GoogleAuthCard
+                  compact
+                  title="Sign in to Submit Booking"
+                  description="Sign in with your Google account so your campus service booking is stored in Firestore and visible in your Student Hub."
+                  buttonLabel="Continue with Google"
+                  loading={authBusy}
+                  error={authError}
+                  onSignIn={onSignIn}
+                />
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-4">
               {/* Date & Time */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -511,18 +555,27 @@ export function ServicesView({
                 />
               </div>
 
+              {submitError && (
+                <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                  {submitError}
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="w-full py-3.5 px-5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] text-white text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3B1D6E]"
+                disabled={submitting}
+                className="w-full py-3.5 px-5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] disabled:opacity-60 text-white text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3B1D6E]"
               >
-                Submit Demo Booking Request — ₹{selectedService.price}
+                {submitting
+                  ? 'Saving Booking to Firestore...'
+                  : `Submit Demo Booking Request — ₹${selectedService.price}`}
               </button>
 
               <p className="text-[11px] text-[#6B5E84] text-center leading-relaxed">
-                Demonstration booking flow · No online payment required · Stored locally in your
-                browser
+                Demonstration booking flow · No online payment required · Stored in Cloud Firestore
               </p>
             </form>
+            )}
           </div>
         </div>
       </div>

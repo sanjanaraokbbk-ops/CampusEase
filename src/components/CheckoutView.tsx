@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Trash2,
 } from 'lucide-react';
+import { User } from 'firebase/auth';
 import {
   DELIVERY_FEES,
   HOSTEL_LOCATIONS,
@@ -21,19 +22,28 @@ import {
   PageView,
   StudentProfile,
 } from '../types/campus';
+import { GoogleAuthCard } from './GoogleAuthCard';
 import { ProductImage } from './ProductImage';
 
 interface CheckoutViewProps {
+  user: User | null;
+  authBusy: boolean;
+  authError: string | null;
+  onSignIn: () => void;
   cartItems: CartDetailedItem[];
   profile: StudentProfile;
   onUpdateQty: (productId: string, qty: number) => void;
   onRemove: (productId: string) => void;
-  onPlaceOrder: (input: PlaceOrderInput) => Order | null;
+  onPlaceOrder: (input: PlaceOrderInput) => Promise<Order | null>;
   onOrderConfirmed: (order: Order) => void;
   onNavigate: (view: PageView) => void;
 }
 
 export function CheckoutView({
+  user,
+  authBusy,
+  authError,
+  onSignIn,
   cartItems,
   profile,
   onUpdateQty,
@@ -55,6 +65,13 @@ export function CheckoutView({
   );
   const [notes, setNotes] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setStudentName(profile.name);
+    setMobile(profile.mobile);
+    setEmail(profile.email);
+  }, [profile]);
 
   const availableLocations =
     fulfillmentMethod === FulfillmentMethod.HOSTEL_DELIVERY
@@ -127,21 +144,31 @@ export function CheckoutView({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!user || !validate()) return;
 
-    const order = onPlaceOrder({
-      studentName,
-      mobile: mobile.replace(/\D/g, ''),
-      email,
-      location,
-      fulfillmentMethod,
-      notes,
-    });
+    setSubmitting(true);
+    try {
+      const order = await onPlaceOrder({
+        studentName,
+        mobile: mobile.replace(/\D/g, ''),
+        email,
+        location,
+        fulfillmentMethod,
+        notes,
+      });
 
-    if (order) {
-      onOrderConfirmed(order);
+      if (order) {
+        onOrderConfirmed(order);
+      }
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        cart: err instanceof Error ? err.message : 'Unable to place order right now.',
+      }));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -168,8 +195,8 @@ export function CheckoutView({
           <Info className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
           <span>
             <strong>Prototype Checkout Notice:</strong> No real payment is processed and no card or
-            UPI credentials are collected. Submitting this form creates a local demonstration order
-            with a unique order ID.
+            UPI credentials are collected. Submitting this form saves a demonstration order in Cloud
+            Firestore with a unique order ID.
           </span>
         </div>
       </div>
@@ -463,17 +490,35 @@ export function CheckoutView({
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={availableCartItems.length === 0}
-              className="mt-6 w-full py-3.5 px-5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] disabled:bg-[#B8ABC9] text-white text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3B1D6E]"
-            >
-              Place Demonstration Order — ₹{total}
-            </button>
+            {!user ? (
+              <div className="mt-6">
+                <GoogleAuthCard
+                  compact
+                  title="Sign in to Place Order"
+                  description="Sign in with Google to save this order to Firestore and track simulated status updates in your Student Hub."
+                  buttonLabel="Sign in with Google"
+                  loading={authBusy}
+                  error={authError}
+                  onSignIn={onSignIn}
+                />
+              </div>
+            ) : (
+              <>
+                <button
+                  type="submit"
+                  disabled={availableCartItems.length === 0 || submitting}
+                  className="mt-6 w-full py-3.5 px-5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] disabled:bg-[#B8ABC9] text-white text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3B1D6E]"
+                >
+                  {submitting
+                    ? 'Placing Order in Firestore...'
+                    : `Place Demonstration Order — ₹${total}`}
+                </button>
 
-            <p className="text-[11px] text-[#6B5E84] text-center mt-3">
-              Demo Mode · Pay on Pickup / Simulated Settlement · No card details needed
-            </p>
+                <p className="text-[11px] text-[#6B5E84] text-center mt-3">
+                  Demo Mode · Stored in Firebase Firestore · No card details needed
+                </p>
+              </>
+            )}
           </div>
         </aside>
       </form>

@@ -7,6 +7,8 @@ interface EssentialsViewProps {
   products: Product[];
   selectedCategory: ProductCategory | 'All';
   onSelectCategory: (category: ProductCategory | 'All') => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   getProductQuantity: (productId: string) => number;
   onAddToCart: (productId: string) => void;
   onUpdateQty: (productId: string, qty: number) => void;
@@ -27,24 +29,36 @@ export function EssentialsView({
   products,
   selectedCategory,
   onSelectCategory,
+  searchQuery,
+  onSearchChange,
   getProductQuantity,
   onAddToCart,
   onUpdateQty,
   onInspectProduct,
 }: EssentialsViewProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [availableOnly, setAvailableOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('recommended');
 
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+
+  const allCategoryMatchesCount = useMemo(() => {
+    if (!trimmedQuery) return products.length;
+    return products.filter((product) => {
+      if (availableOnly && !product.available) return false;
+      const hay =
+        `${product.name} ${product.category} ${product.description} ${product.unit}`.toLowerCase();
+      return hay.includes(trimmedQuery);
+    }).length;
+  }, [products, availableOnly, trimmedQuery]);
+
   const filteredProducts = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
     const list = products.filter((product) => {
       if (selectedCategory !== 'All' && product.category !== selectedCategory) return false;
       if (availableOnly && !product.available) return false;
-      if (query) {
+      if (trimmedQuery) {
         const hay =
           `${product.name} ${product.category} ${product.description} ${product.unit}`.toLowerCase();
-        if (!hay.includes(query)) return false;
+        if (!hay.includes(trimmedQuery)) return false;
       }
       return true;
     });
@@ -56,7 +70,7 @@ export function EssentialsView({
       return [...list].sort((a, b) => b.price - a.price);
     }
     return list;
-  }, [products, selectedCategory, availableOnly, searchQuery, sortBy]);
+  }, [products, selectedCategory, availableOnly, trimmedQuery, sortBy]);
 
   const showOtcDisclaimer =
     selectedCategory === 'All' || selectedCategory === ProductCategory.MEDICINES;
@@ -111,7 +125,7 @@ export function EssentialsView({
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search notebooks, noodles, bandages, shampoo..."
               aria-label="Search products"
               className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#DDD4F2] bg-white text-sm text-[#1A132B] placeholder:text-[#8E82A6] focus:outline-none focus:ring-2 focus:ring-[#3B1D6E] focus:border-transparent"
@@ -119,7 +133,7 @@ export function EssentialsView({
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => onSearchChange('')}
                 aria-label="Clear search"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#7A6F93] hover:text-[#2A1254] cursor-pointer"
               >
@@ -158,6 +172,20 @@ export function EssentialsView({
             </div>
           </div>
         </div>
+        {trimmedQuery && selectedCategory !== 'All' && allCategoryMatchesCount > filteredProducts.length && (
+          <div className="pt-1 flex flex-wrap items-center gap-2 text-xs text-[#52476A]">
+            <span>
+              Filtering &ldquo;{searchQuery.trim()}&rdquo; within <strong>{selectedCategory}</strong>.
+            </span>
+            <button
+              type="button"
+              onClick={() => onSelectCategory('All')}
+              className="font-semibold text-[#3B1D6E] hover:underline cursor-pointer"
+            >
+              Show all {allCategoryMatchesCount} matches across all categories
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Responsible OTC Medicines Notice */}
@@ -180,19 +208,36 @@ export function EssentialsView({
             No matching essentials found
           </h2>
           <p className="text-sm text-[#655A7C] mt-2 max-w-md mx-auto">
-            Try clearing your search term or switching back to all product categories.
+            {selectedCategory !== 'All' && allCategoryMatchesCount > 0
+              ? `No matches in ${selectedCategory}, but ${allCategoryMatchesCount} matching products exist across other categories.`
+              : 'Try clearing your search term or switching back to all product categories.'}
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchQuery('');
-              setAvailableOnly(false);
-              onSelectCategory('All');
-            }}
-            className="mt-5 px-5 py-2.5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] text-white text-sm font-medium transition-colors cursor-pointer"
-          >
-            Reset All Filters
-          </button>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            {selectedCategory !== 'All' && allCategoryMatchesCount > 0 && (
+              <button
+                type="button"
+                onClick={() => onSelectCategory('All')}
+                className="px-5 py-2.5 rounded-xl bg-[#3B1D6E] hover:bg-[#2A1254] text-white text-sm font-medium transition-colors cursor-pointer"
+              >
+                Search All Categories ({allCategoryMatchesCount})
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                onSearchChange('');
+                setAvailableOnly(false);
+                onSelectCategory('All');
+              }}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
+                selectedCategory !== 'All' && allCategoryMatchesCount > 0
+                  ? 'border border-[#DDD4F2] bg-white hover:bg-[#F7F5FC] text-[#2A1254]'
+                  : 'bg-[#3B1D6E] hover:bg-[#2A1254] text-white'
+              }`}
+            >
+              Reset All Filters
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

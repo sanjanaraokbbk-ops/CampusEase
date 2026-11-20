@@ -1,0 +1,293 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'sanjanaraokbbk@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin()
+        || (isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidMobile(val) {
+      return val is string && val.size() == 10 && val.matches('^[0-9]{10}$');
+    }
+
+    function isValidEmail(val) {
+      return val is string && val.size() >= 5 && val.size() <= 120 && val.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$');
+    }
+
+    function isValidIsoDate(val) {
+      return val is string && val.size() == 10 && val.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+          'id', 'name', 'category', 'price', 'unit', 'description', 'image', 'available', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'name', 'category', 'price', 'unit', 'description', 'image', 'available', 'popular', 'otcNotice', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.id.size() <= 64
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.category in ['Stationery', 'Snacks & Beverages', 'Personal Care', 'Medicines & First Aid']
+        && data.price is number && data.price >= 1 && data.price <= 50000
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 60
+        && data.description is string && data.description.size() >= 5 && data.description.size() <= 500
+        && data.image is string && data.image.size() >= 1 && data.image.size() <= 250
+        && data.available is bool
+        && (!('popular' in data) || data.popular is bool)
+        && (!('otcNotice' in data) || data.otcNotice is bool)
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'name', 'studentId', 'program', 'mobile', 'email', 'defaultLocation', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'studentId', 'program', 'mobile', 'email', 'defaultLocation', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.studentId is string && data.studentId.size() >= 1 && data.studentId.size() <= 40
+        && data.program is string && data.program.size() >= 2 && data.program.size() <= 120
+        && isValidMobile(data.mobile)
+        && isValidEmail(data.email)
+        && data.defaultLocation is string && data.defaultLocation.size() >= 2 && data.defaultLocation.size() <= 150
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidOrderLineItem(item) {
+      return item is map
+        && item.keys().hasAll(['productId', 'name', 'category', 'unit', 'price', 'quantity', 'image'])
+        && item.keys().hasOnly(['productId', 'name', 'category', 'unit', 'price', 'quantity', 'image'])
+        && isValidId(item.productId)
+        && item.name is string && item.name.size() >= 2 && item.name.size() <= 120
+        && item.category in ['Stationery', 'Snacks & Beverages', 'Personal Care', 'Medicines & First Aid']
+        && item.unit is string && item.unit.size() >= 1 && item.unit.size() <= 60
+        && item.price is number && item.price >= 1 && item.price <= 50000
+        && item.quantity is int && item.quantity >= 1 && item.quantity <= 20
+        && item.image is string && item.image.size() >= 1 && item.image.size() <= 250;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'studentName', 'mobile', 'email', 'location',
+          'fulfillmentMethod', 'notes', 'items', 'subtotal', 'convenienceFee',
+          'total', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'studentName', 'mobile', 'email', 'location',
+          'fulfillmentMethod', 'notes', 'items', 'subtotal', 'convenienceFee',
+          'total', 'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id) && data.id.size() >= 4 && data.id.size() <= 32
+        && isValidId(data.userId)
+        && data.studentName is string && data.studentName.size() >= 2 && data.studentName.size() <= 100
+        && isValidMobile(data.mobile)
+        && isValidEmail(data.email)
+        && data.location is string && data.location.size() >= 2 && data.location.size() <= 150
+        && data.fulfillmentMethod in ['hostel_delivery', 'campus_pickup']
+        && data.notes is string && data.notes.size() <= 400
+        && data.items is list && data.items.size() >= 1 && data.items.size() <= 20
+        && isValidOrderLineItem(data.items[0])
+        && data.subtotal is number && data.subtotal >= 1 && data.subtotal <= 100000
+        && data.convenienceFee is number && data.convenienceFee >= 0 && data.convenienceFee <= 500
+        && data.total is number && data.total == data.subtotal + data.convenienceFee
+        && data.status in ['Order Placed', 'Preparing', 'Ready for Pickup', 'Completed']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidOrderStatusStep(prevStatus, nextStatus) {
+      return (prevStatus == 'Order Placed' && nextStatus == 'Preparing')
+        || (prevStatus == 'Preparing' && nextStatus == 'Ready for Pickup')
+        || (prevStatus == 'Ready for Pickup' && nextStatus == 'Completed');
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'serviceId', 'serviceName', 'servicePrice', 'servicePriceUnit',
+          'preferredDate', 'preferredTime', 'studentName', 'mobile', 'email',
+          'location', 'notes', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'serviceId', 'serviceName', 'servicePrice', 'servicePriceUnit',
+          'preferredDate', 'preferredTime', 'studentName', 'mobile', 'email',
+          'location', 'notes', 'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id) && data.id.size() >= 4 && data.id.size() <= 32
+        && isValidId(data.userId)
+        && isValidId(data.serviceId) && data.serviceId.size() <= 40
+        && data.serviceName is string && data.serviceName.size() >= 2 && data.serviceName.size() <= 120
+        && data.servicePrice is number && data.servicePrice >= 1 && data.servicePrice <= 50000
+        && data.servicePriceUnit is string && data.servicePriceUnit.size() >= 2 && data.servicePriceUnit.size() <= 60
+        && isValidIsoDate(data.preferredDate)
+        && data.preferredTime is string && data.preferredTime.size() >= 3 && data.preferredTime.size() <= 40
+        && data.studentName is string && data.studentName.size() >= 2 && data.studentName.size() <= 100
+        && isValidMobile(data.mobile)
+        && isValidEmail(data.email)
+        && data.location is string && data.location.size() >= 2 && data.location.size() <= 150
+        && data.notes is string && data.notes.size() <= 400
+        && data.status in ['Requested', 'Confirmed', 'In Progress', 'Completed']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 4. Collection Rules
+
+    // Public catalog (no PII): anyone can browse; only verified admins can mutate inventory
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if resource.data.available == true || resource.data.available == false;
+      allow create: if isVerifiedUser()
+        && isValidId(productId)
+        && isValidProduct(incoming())
+        && incoming().id == productId
+        && incoming().updatedAt == request.time
+        && isAdmin();
+      allow update: if isVerifiedUser()
+        && isValidId(productId)
+        && isValidProduct(incoming())
+        && incoming().id == existing().id
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'category', 'price', 'unit', 'description', 'image', 'available', 'popular', 'otcNotice', 'updatedAt'
+        ])
+        && isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(productId) && isAdmin();
+    }
+
+    // Trusted Admin Registry (read own record only; writes out-of-band)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // Student Profiles (strict PII isolation to owner or verified admin; no list scraping)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (
+            isOwner(userId)
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'studentId', 'program', 'mobile', 'email', 'defaultLocation', 'updatedAt'
+            ])
+          )
+          || isAdmin()
+        );
+      allow delete: if false;
+    }
+
+    // Student Orders (owner + admin only; strict status progression & terminal state lock)
+    match /orders/{orderId} {
+      allow get: if isSignedIn()
+        && isValidId(orderId)
+        && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().id == orderId
+        && incoming().userId == request.auth.uid
+        && incoming().status == 'Order Placed'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (
+            existing().userId == request.auth.uid
+            && existing().status != 'Completed'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+            && isValidOrderStatusStep(existing().status, incoming().status)
+          )
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+            && isAdmin()
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(orderId) && isAdmin();
+    }
+
+    // Campus Service Bookings (owner + admin only)
+    match /bookings/{bookingId} {
+      allow get: if isSignedIn()
+        && isValidId(bookingId)
+        && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(bookingId)
+        && isValidBooking(incoming())
+        && incoming().id == bookingId
+        && incoming().userId == request.auth.uid
+        && incoming().status == 'Requested'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(bookingId)
+        && isValidBooking(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(bookingId) && isAdmin();
+    }
+  }
+}

@@ -35,14 +35,13 @@ export default function App() {
 
   const [currentView, setCurrentView] = useState<PageView>(getInitialView);
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'All'>('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
   const [inspectedProduct, setInspectedProduct] = useState<Product | null>(null);
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(
-    () => store.orders[0]?.id ?? null
-  );
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Sync browser back/forward hash navigation
   useEffect(() => {
     const onHashChange = () => {
       const next = window.location.hash.replace('#', '') as PageView;
@@ -60,15 +59,13 @@ export default function App() {
 
   useEffect(() => {
     if (!toastMessage) return;
-    const timer = window.setTimeout(() => setToastMessage(null), 2400);
+    const timer = window.setTimeout(() => setToastMessage(null), 2600);
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
   const navigate = useCallback((view: PageView, category?: ProductCategory) => {
     if (category) {
       setSelectedCategory(category);
-    } else if (view === 'essentials') {
-      // Preserve current category when clicking Essentials directly unless coming from specific category
     }
     setCurrentView(view);
     if (typeof window !== 'undefined') {
@@ -93,8 +90,9 @@ export default function App() {
   const handleOrderConfirmed = useCallback(
     (order: Order) => {
       setActiveOrderId(order.id);
+      setLastPlacedOrder(order);
       navigate('order-confirmation');
-      showToast(`Demo order ${order.id} placed successfully`);
+      showToast(`Order ${order.id} saved to Firestore`);
     },
     [navigate, showToast]
   );
@@ -102,21 +100,35 @@ export default function App() {
   const handleInspectOrder = useCallback(
     (order: Order) => {
       setActiveOrderId(order.id);
+      setLastPlacedOrder(order);
       navigate('order-confirmation');
     },
     [navigate]
   );
 
   const activeOrder = useMemo(() => {
-    if (!activeOrderId) return store.orders[0] ?? null;
-    return store.orders.find((o) => o.id === activeOrderId) ?? store.orders[0] ?? null;
-  }, [activeOrderId, store.orders]);
+    if (activeOrderId) {
+      const liveMatch = store.orders.find((o) => o.id === activeOrderId);
+      if (liveMatch) return liveMatch;
+    }
+    if (lastPlacedOrder) return lastPlacedOrder;
+    return store.myOrders[0] ?? store.orders[0] ?? null;
+  }, [activeOrderId, lastPlacedOrder, store.orders, store.myOrders]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#1A132B]">
       <Navbar
         currentView={currentView}
         cartCount={store.cartCount}
+        products={store.products}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={(query) => {
+          setSearchQuery(query);
+          setSelectedCategory('All');
+          navigate('essentials');
+        }}
+        onSelectProduct={setInspectedProduct}
         onNavigate={(view) => {
           if (view === 'essentials') setSelectedCategory('All');
           navigate(view);
@@ -141,6 +153,8 @@ export default function App() {
             products={store.products}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             getProductQuantity={store.getProductQuantity}
             onAddToCart={handleAddToCart}
             onUpdateQty={store.updateCartQuantity}
@@ -150,10 +164,16 @@ export default function App() {
 
         {currentView === 'services' && (
           <ServicesView
+            user={store.user}
+            authBusy={store.authBusy}
+            authError={store.authError}
+            onSignIn={() => void store.signInWithGoogle()}
             profile={store.profile}
-            onCreateBooking={(input) => {
-              const booking = store.createServiceBooking(input);
-              showToast(`Service booking ${booking.id} confirmed`);
+            onCreateBooking={async (input) => {
+              const booking = await store.createServiceBooking(input);
+              if (booking) {
+                showToast(`Service booking ${booking.id} saved to Firestore`);
+              }
               return booking;
             }}
             onNavigate={navigate}
@@ -162,6 +182,10 @@ export default function App() {
 
         {currentView === 'checkout' && (
           <CheckoutView
+            user={store.user}
+            authBusy={store.authBusy}
+            authError={store.authError}
+            onSignIn={() => void store.signInWithGoogle()}
             cartItems={store.cartItems}
             profile={store.profile}
             onUpdateQty={store.updateCartQuantity}
@@ -175,8 +199,8 @@ export default function App() {
         {currentView === 'order-confirmation' && (
           <OrderConfirmationView
             order={activeOrder}
-            onAdvanceStatus={(orderId, nextStatus) => {
-              store.updateOrderStatus(orderId, nextStatus);
+            onAdvanceStatus={async (orderId, nextStatus) => {
+              await store.updateOrderStatus(orderId, nextStatus);
               showToast(`Order ${orderId} updated to "${nextStatus}"`);
             }}
             onNavigate={navigate}
@@ -185,9 +209,16 @@ export default function App() {
 
         {currentView === 'student' && (
           <StudentDashboardView
+            user={store.user}
+            authReady={store.authReady}
+            authBusy={store.authBusy}
+            authError={store.authError}
+            dataLoading={store.dataLoading}
+            onSignIn={() => void store.signInWithGoogle()}
+            onSignOut={() => void store.signOutUser()}
             profile={store.profile}
-            orders={store.orders}
-            bookings={store.bookings}
+            orders={store.myOrders}
+            bookings={store.myBookings}
             cartCount={store.cartCount}
             onUpdateProfile={store.updateProfile}
             onInspectOrder={handleInspectOrder}
@@ -197,23 +228,32 @@ export default function App() {
 
         {currentView === 'admin' && (
           <AdminDashboardView
+            user={store.user}
+            authReady={store.authReady}
+            authBusy={store.authBusy}
+            authError={store.authError}
+            isAdmin={store.isAdmin}
+            onSignIn={() => void store.signInWithGoogle()}
+            onSignOut={() => void store.signOutUser()}
+            onNavigate={navigate}
             products={store.products}
             orders={store.orders}
             bookings={store.bookings}
-            onUpdateOrderStatus={(id, status) => {
-              store.updateOrderStatus(id, status);
+            onUpdateOrderStatus={async (id, status) => {
+              await store.updateOrderStatus(id, status);
               showToast(`Order ${id} set to ${status}`);
             }}
-            onUpdateBookingStatus={(id, status) => {
-              store.updateBookingStatus(id, status);
+            onUpdateBookingStatus={async (id, status) => {
+              await store.updateBookingStatus(id, status);
               showToast(`Booking ${id} set to ${status}`);
             }}
-            onToggleProductAvailability={(productId) => {
-              store.toggleProductAvailability(productId);
+            onToggleProductAvailability={async (productId) => {
+              await store.toggleProductAvailability(productId);
+              showToast('Product availability updated in Firestore');
             }}
-            onResetDemoData={() => {
-              store.resetDemoData();
-              showToast('Starter demo data restored');
+            onSyncCatalogToFirestore={async () => {
+              await store.syncCatalogToFirestore();
+              showToast('All 20 catalog products synced to Firestore');
             }}
           />
         )}
@@ -247,7 +287,6 @@ export default function App() {
         onOpenCart={() => setCartOpen(true)}
       />
 
-      {/* Non-intrusive Action Feedback Toast */}
       {toastMessage && (
         <div
           role="status"

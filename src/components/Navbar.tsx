@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { Menu, ShoppingBag, X } from 'lucide-react';
-import { PageView } from '../types/campus';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight, Menu, Search, ShoppingBag, X } from 'lucide-react';
+import { PageView, Product } from '../types/campus';
+import { ProductImage } from './ProductImage';
 
 interface NavbarProps {
   currentView: PageView;
   cartCount: number;
+  products: Product[];
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  onSearchSubmit: (query: string) => void;
+  onSelectProduct: (product: Product) => void;
   onNavigate: (view: PageView) => void;
   onOpenCart: () => void;
 }
@@ -17,22 +23,93 @@ const NAV_ITEMS: { id: PageView; label: string }[] = [
   { id: 'admin', label: 'Admin' },
 ];
 
-export function Navbar({ currentView, cartCount, onNavigate, onOpenCart }: NavbarProps) {
+export function Navbar({
+  currentView,
+  cartCount,
+  products,
+  searchQuery,
+  onSearchChange,
+  onSearchSubmit,
+  onSelectProduct,
+  onNavigate,
+  onOpenCart,
+}: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+
+  const matchingProducts = useMemo(() => {
+    if (!trimmedQuery) return [];
+    return products.filter((product) => {
+      const haystack =
+        `${product.name} ${product.category} ${product.unit} ${product.description}`.toLowerCase();
+      return haystack.includes(trimmedQuery);
+    });
+  }, [products, trimmedQuery]);
+
+  // Close quick-results dropdown on outside click or Escape
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDropdownOpen(false);
+        setMobileSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mobileSearchOpen) {
+      mobileSearchInputRef.current?.focus();
+    }
+  }, [mobileSearchOpen]);
 
   const handleNavClick = (view: PageView) => {
     onNavigate(view);
     setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    onSearchSubmit(searchQuery);
+    setDropdownOpen(false);
+    setMobileSearchOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  const handlePickProduct = (product: Product) => {
+    setDropdownOpen(false);
+    setMobileSearchOpen(false);
+    onSelectProduct(product);
   };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8E2F4]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 lg:gap-6">
         {/* Zone 1: Single-line Brand Wordmark */}
         <button
           type="button"
           onClick={() => handleNavClick('home')}
-          className="font-display text-xl font-extrabold tracking-tight text-[#2A1254] whitespace-nowrap shrink-0 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B1D6E] rounded-md"
+          className="font-display text-xl font-extrabold tracking-tight text-[#2A1254] whitespace-nowrap shrink-0 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B1D6E] rounded-md cursor-pointer"
         >
           <span
             className="w-7 h-7 rounded-lg bg-[#3B1D6E] text-white inline-flex items-center justify-center text-xs font-bold tracking-normal"
@@ -46,7 +123,7 @@ export function Navbar({ currentView, cartCount, onNavigate, onOpenCart }: Navba
         {/* Zone 2: 5 Single-Line Text Navigation Links */}
         <nav
           aria-label="Primary navigation"
-          className="hidden md:flex items-center gap-7 text-sm font-medium text-[#52476A]"
+          className="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-medium text-[#52476A]"
         >
           {NAV_ITEMS.map((item) => {
             const isActive =
@@ -58,10 +135,8 @@ export function Navbar({ currentView, cartCount, onNavigate, onOpenCart }: Navba
                 key={item.id}
                 type="button"
                 onClick={() => handleNavClick(item.id)}
-                className={`relative py-1 whitespace-nowrap shrink-0 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B1D6E] rounded ${
-                  isActive
-                    ? 'text-[#2A1254] font-semibold'
-                    : 'hover:text-[#2A1254]'
+                className={`relative py-1 whitespace-nowrap shrink-0 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B1D6E] rounded cursor-pointer ${
+                  isActive ? 'text-[#2A1254] font-semibold' : 'hover:text-[#2A1254]'
                 }`}
               >
                 {item.label}
@@ -76,8 +151,117 @@ export function Navbar({ currentView, cartCount, onNavigate, onOpenCart }: Navba
           })}
         </nav>
 
-        {/* Zone 3: Single Primary Action (Shopping Bag) + Mobile Menu Trigger */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Zone 3: Global Product Search + Primary Cart Action */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Desktop Search Bar */}
+          <div ref={searchContainerRef} className="relative hidden lg:block w-56 xl:w-64">
+            <form onSubmit={handleSubmit} role="search" aria-label="Search campus products">
+              <Search className="w-4 h-4 text-[#7A6F93] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setDropdownOpen(true)}
+                onChange={(e) => {
+                  onSearchChange(e.target.value);
+                  setDropdownOpen(true);
+                }}
+                placeholder="Search essentials..."
+                aria-label="Search products across all categories"
+                className="w-full pl-9 pr-8 py-2 rounded-xl border border-[#DDD4F2] bg-[#FAF8FE] focus:bg-white text-xs sm:text-sm text-[#1A132B] placeholder:text-[#8E82A6] focus:outline-none focus:ring-2 focus:ring-[#3B1D6E] focus:border-transparent transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSearchChange('');
+                    setDropdownOpen(false);
+                  }}
+                  aria-label="Clear search query"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#7A6F93] hover:text-[#2A1254] cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </form>
+
+            {/* Instant Search Results Dropdown */}
+            {dropdownOpen && trimmedQuery.length > 0 && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-[#E4DCF4] shadow-xl overflow-hidden z-50">
+                <div className="px-4 py-2.5 bg-[#FAF8FE] border-b border-[#EFEAF9] flex items-center justify-between text-xs text-[#6B5E84]">
+                  <span>Results across all categories</span>
+                  <span className="tabular-nums font-medium">{matchingProducts.length} found</span>
+                </div>
+
+                {matchingProducts.length === 0 ? (
+                  <div className="p-5 text-center text-xs text-[#6B5E84]">
+                    No products matching &ldquo;{searchQuery.trim()}&rdquo;.
+                  </div>
+                ) : (
+                  <>
+                    <ul className="divide-y divide-[#EFEAF9] max-h-80 overflow-y-auto">
+                      {matchingProducts.slice(0, 6).map((product) => (
+                        <li key={product.id}>
+                          <button
+                            type="button"
+                            onClick={() => handlePickProduct(product)}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-[#FAF8FE] text-left transition-colors cursor-pointer"
+                          >
+                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#F7F5FC] border border-[#EFEAF9] shrink-0">
+                              <ProductImage
+                                src={product.image}
+                                alt={product.name}
+                                fallbackTitle={product.name}
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-[#2A1254] truncate">
+                                {product.name}
+                              </p>
+                              <p className="text-[11px] text-[#6B5E84] truncate">
+                                {product.category} ·{' '}
+                                {product.available ? 'In Stock' : 'Out of Stock'}
+                              </p>
+                            </div>
+                            <span className="font-display text-xs font-bold text-[#2A1254] tabular-nums shrink-0">
+                              ₹{product.price}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSearchSubmit(searchQuery);
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 bg-[#FAF8FE] hover:bg-[#EFEAF9] border-t border-[#EFEAF9] text-xs font-semibold text-[#3B1D6E] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <span>View all {matchingProducts.length} results in Essentials</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile/Tablet Search Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileSearchOpen((prev) => !prev);
+              setMobileMenuOpen(false);
+            }}
+            aria-label={mobileSearchOpen ? 'Close product search' : 'Search products'}
+            aria-expanded={mobileSearchOpen}
+            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[#E4DCF4] text-[#2A1254] hover:bg-[#F7F5FC] transition-colors cursor-pointer"
+          >
+            {mobileSearchOpen ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+          </button>
+
+          {/* Primary Action: Cart */}
           <button
             type="button"
             onClick={onOpenCart}
@@ -89,17 +273,89 @@ export function Navbar({ currentView, cartCount, onNavigate, onOpenCart }: Navba
             <span className="tabular-nums font-semibold text-[#BAE6FD]">({cartCount})</span>
           </button>
 
+          {/* Mobile Menu Toggle */}
           <button
             type="button"
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            onClick={() => {
+              setMobileMenuOpen((prev) => !prev);
+              setMobileSearchOpen(false);
+            }}
             aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={mobileMenuOpen}
-            className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[#E4DCF4] text-[#2A1254] hover:bg-[#F7F5FC] transition-colors"
+            className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[#E4DCF4] text-[#2A1254] hover:bg-[#F7F5FC] transition-colors cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
+
+      {/* Expandable Search Panel for Mobile & Tablet */}
+      {mobileSearchOpen && (
+        <div className="lg:hidden bg-white border-t border-[#E8E2F4] px-4 py-3 shadow-lg">
+          <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-[#7A6F93] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                ref={mobileSearchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search notebooks, snacks, shampoo, first aid..."
+                aria-label="Search products across all categories"
+                className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-[#DDD4F2] bg-[#FAF8FE] focus:bg-white text-sm text-[#1A132B] focus:outline-none focus:ring-2 focus:ring-[#3B1D6E]"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange('')}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#7A6F93] hover:text-[#2A1254]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2.5 rounded-xl bg-[#3B1D6E] text-white text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Search
+            </button>
+          </form>
+
+          {trimmedQuery.length > 0 && (
+            <div className="mt-2.5 border-t border-[#EFEAF9] pt-2">
+              {matchingProducts.length === 0 ? (
+                <p className="text-xs text-[#6B5E84] py-2 text-center">
+                  No products matching &ldquo;{searchQuery.trim()}&rdquo;.
+                </p>
+              ) : (
+                <ul className="divide-y divide-[#EFEAF9] max-h-60 overflow-y-auto">
+                  {matchingProducts.slice(0, 5).map((product) => (
+                    <li key={product.id}>
+                      <button
+                        type="button"
+                        onClick={() => handlePickProduct(product)}
+                        className="w-full py-2 flex items-center justify-between gap-3 text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-[#2A1254] truncate">
+                            {product.name}
+                          </p>
+                          <p className="text-[11px] text-[#6B5E84] truncate">{product.category}</p>
+                        </div>
+                        <span className="font-display text-xs font-bold text-[#2A1254] tabular-nums shrink-0">
+                          ₹{product.price}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (

@@ -16,7 +16,7 @@ import { ProductImage } from './ProductImage';
 
 interface OrderConfirmationViewProps {
   order: Order | null;
-  onAdvanceStatus: (orderId: string, nextStatus: OrderStatus) => void;
+  onAdvanceStatus: (orderId: string, nextStatus: OrderStatus) => Promise<void> | void;
   onNavigate: (view: PageView) => void;
 }
 
@@ -85,7 +85,7 @@ export function OrderConfirmationView({
                 Thank you, {order.studentName}
               </h1>
               <p className="text-sm text-[#52476A] mt-1">
-                Placed on {formattedDate} · Saved locally to your browser
+                Placed on {formattedDate} · Synced with Cloud Firestore
               </p>
             </div>
           </div>

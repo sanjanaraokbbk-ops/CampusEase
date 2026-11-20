@@ -115,6 +115,24 @@ export default function App() {
     return store.myOrders[0] ?? store.orders[0] ?? null;
   }, [activeOrderId, lastPlacedOrder, store.orders, store.myOrders]);
 
+  const handleSignIn = useCallback(async () => {
+    const ok = await store.signInWithGoogle();
+    if (ok) {
+      showToast('Signed in to CampusEase');
+    }
+  }, [store, showToast]);
+
+  const handleSignOut = useCallback(async () => {
+    await store.signOutUser();
+    showToast('Signed out of CampusEase');
+  }, [store, showToast]);
+
+  useEffect(() => {
+    if (store.authError) {
+      showToast(store.authError);
+    }
+  }, [store.authError, showToast]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#1A132B]">
       <Navbar
@@ -122,6 +140,12 @@ export default function App() {
         cartCount={store.cartCount}
         products={store.products}
         searchQuery={searchQuery}
+        user={store.user}
+        authReady={store.authReady}
+        authBusy={store.authBusy}
+        isAdmin={store.isAdmin}
+        onSignIn={() => void handleSignIn()}
+        onSignOut={() => void handleSignOut()}
         onSearchChange={setSearchQuery}
         onSearchSubmit={(query) => {
           setSearchQuery(query);
